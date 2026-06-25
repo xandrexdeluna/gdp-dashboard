@@ -33,10 +33,22 @@ beta = st.sidebar.slider(
 
 # -------------------------------
 # DATA: INTERNET USERS (PHILIPPINES)
+# 2014-2025 Historical Data
 # -------------------------------
-years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 users = [
-    34.70, 36.90, 39.20, 41.60, 44.10, 43.03, 53.76, 66.91, 75.21, 83.77, 86.98
+    34.70,  # 2014
+    36.90,  # 2015
+    39.20,  # 2016
+    41.60,  # 2017
+    44.10,  # 2018
+    43.03,  # 2019
+    53.76,  # 2020
+    66.91,  # 2021
+    75.21,  # 2022
+    77.87,  # 2023
+    67.26,  # 2024
+    97.50   # 2025 - DataReportal
 ]
 
 df = pd.DataFrame({"Year": years, "Internet Users (Millions)": users})
@@ -72,7 +84,7 @@ last_year = df["Year"].iloc[-1]
 forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 
 # -------------------------------
-# MATHEMATICAL FRAMEWORK - FIXED!
+# MATHEMATICAL FRAMEWORK
 # -------------------------------
 with st.expander("Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
     st.markdown("**Level Equation**")
@@ -93,7 +105,7 @@ with st.expander("Mathematical Framework (Holt's Linear Trend Method)", expanded
     st.markdown("- m = Number of years ahead being forecasted")
 
 # -------------------------------
-# METRICS DISPLAY
+# METRICS DISPLAY - 2026, 2027, 2028
 # -------------------------------
 st.markdown("---")
 st.subheader("Internet Growth Dashboard Metrics")
@@ -102,21 +114,21 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        label=str(forecast_years_list[0]),
+        label=str(forecast_years_list[0]) + " (Forecast)",
         value=f"{forecast[0]:,.2f} Million",
         delta=f"{forecast[0] - historical_data[-1]:.2f} Million"
     )
 
 with col2:
     st.metric(
-        label=str(forecast_years_list[1]),
+        label=str(forecast_years_list[1]) + " (Forecast)",
         value=f"{forecast[1]:,.2f} Million",
         delta=f"{forecast[1] - forecast[0]:.2f} Million"
     )
 
 with col3:
     st.metric(
-        label=str(forecast_years_list[2]),
+        label=str(forecast_years_list[2]) + " (Forecast)",
         value=f"{forecast[2]:,.2f} Million",
         delta=f"{forecast[2] - forecast[1]:.2f} Million"
     )
@@ -125,13 +137,17 @@ with col3:
 # HISTORICAL DATA TABLE
 # -------------------------------
 st.markdown("---")
-st.subheader("Historical Internet User Data")
-st.dataframe(df, use_container_width=True)
+st.subheader("Historical Internet User Data (2014-2025)")
+
+df_display = df.copy()
+df_display["Internet Users (Millions)"] = df_display["Internet Users (Millions)"].apply(lambda x: f"{x:.2f}")
+
+st.dataframe(df_display, use_container_width=True)
 
 # -------------------------------
-# FORECAST TABLE
+# FORECAST TABLE - 2026, 2027, 2028
 # -------------------------------
-st.subheader("Forecast Summary")
+st.subheader("Forecast Summary (2026-2028)")
 
 forecast_data = {
     "Year": forecast_years_list,
@@ -159,7 +175,7 @@ with col1:
     st.metric(
         label="Average Historical Growth",
         value=f"{avg_growth:.1f}%",
-        delta="per year"
+        delta="per year (2014-2025)"
     )
 
 with col2:
@@ -171,7 +187,7 @@ with col2:
 
 with col3:
     st.metric(
-        label="Current Value (2024)",
+        label="Current Value (2025)",
         value=f"{users[-1]:.1f} Million",
         delta=f"{users[-1] - users[0]:.1f} Million"
     )
@@ -179,7 +195,7 @@ with col3:
 # -------------------------------
 # SCENARIO COMPARISON
 # -------------------------------
-st.subheader("Scenario Comparison")
+st.subheader("Scenario Comparison (2026-2028)")
 
 scenarios = [
     {"name": "Conservative", "alpha": 0.20, "beta": 0.20},
@@ -192,6 +208,8 @@ for s in scenarios:
     _, _, fcast = holts_linear_trend(historical_data, s["alpha"], s["beta"], forecast_years)
     row = {
         "Scenario": s["name"],
+        "Alpha": s["alpha"],
+        "Beta": s["beta"],
         str(forecast_years_list[0]): f"{fcast[0]:.2f}",
         str(forecast_years_list[1]): f"{fcast[1]:.2f}",
         str(forecast_years_list[2]): f"{fcast[2]:.2f}",
@@ -202,9 +220,45 @@ scenario_df = pd.DataFrame(scenario_data)
 st.dataframe(scenario_df, use_container_width=True)
 
 # -------------------------------
+# COMPLETE DATA SUMMARY
+# -------------------------------
+st.subheader("Complete Data Summary (2014-2028)")
+
+complete_data = []
+for i, year in enumerate(years):
+    complete_data.append({
+        "Year": year,
+        "Type": "Historical",
+        "Internet Users (Millions)": f"{users[i]:.2f}"
+    })
+
+for i, year in enumerate(forecast_years_list):
+    complete_data.append({
+        "Year": year,
+        "Type": "Forecast",
+        "Internet Users (Millions)": f"{forecast[i]:.2f}"
+    })
+
+complete_df = pd.DataFrame(complete_data)
+st.dataframe(complete_df, use_container_width=True)
+
+# -------------------------------
+# DATA NOTE
+# -------------------------------
+st.markdown("---")
+st.markdown("**Data Note:**")
+st.markdown("""
+- A noticeable decline is observed in 2024 (67.26 million) compared to 2023 (77.87 million)
+- The data shows a strong recovery in 2025 (97.50 million) based on DataReportal's Digital 2025 report
+- This could be due to methodology changes, data reporting differences, or actual market recovery
+- The forecast model accounts for these fluctuations in its trend calculation
+""")
+
+# -------------------------------
 # FOOTER
 # -------------------------------
 st.markdown("---")
 st.caption("Figure 1. Internet User Growth Forecasting Simulation System")
-st.caption("Data sources: DataReportal, World Bank, DICT")
-st.caption("Note: Values are in millions. 2024 data from DataReportal (86.98 million). 2014-2023 data from World Bank/ITU.")
+st.caption("Data sources: World Bank, ITU, DataReportal")
+st.caption("Historical Data: 2014-2025 | Forecast Period: 2026-2028")
+st.caption("Note: Values are in millions. 2025 data from DataReportal (97.50 million).")
