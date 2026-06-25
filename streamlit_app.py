@@ -23,7 +23,7 @@ alpha = st.sidebar.slider(
     max_value=1.0,
     value=0.20,
     step=0.01,
-    help="Controls how much weight is given to the most recent observation. Lower values give more weight to historical data."
+    help="Controls how much weight is given to the most recent observation."
 )
 
 beta = st.sidebar.slider(
@@ -36,13 +36,11 @@ beta = st.sidebar.slider(
 )
 
 # -------------------------------
-# SAMPLE DATA: INTERNET USERS (PHILIPPINES)
-# Replace this with your actual data
+# DATA: INTERNET USERS (PHILIPPINES)
 # -------------------------------
 @st.cache_data
 def load_data():
-    # Sample historical data (2014-2024)
-    # Replace these values with your actual data from DataReportal / World Bank
+    # Historical data (2014-2024)
     years = list(range(2014, 2025))
     users = [
         38.0,   # 2014
@@ -65,27 +63,13 @@ df = load_data()
 # HOLT'S LINEAR TREND METHOD
 # -------------------------------
 def holts_linear_trend(data, alpha, beta, forecast_years):
-    """
-    Applies Holt's Linear Trend Method to forecast future values.
-    
-    Parameters:
-    - data: List or array of historical values
-    - alpha: Level smoothing constant (0-1)
-    - beta: Trend smoothing constant (0-1)
-    - forecast_years: Number of years to forecast ahead
-    
-    Returns:
-    - level: Current level estimate
-    - trend: Current trend estimate
-    - forecast: Forecasted values for future years
-    """
     n = len(data)
     
     # Initialize level and trend
-    level = [data[0]]  # Starting level = first observation
-    trend = [(data[1] - data[0])]  # Starting trend = initial slope
+    level = [data[0]]
+    trend = [(data[1] - data[0])]
     
-    # Apply Holt's method to historical data
+    # Apply Holt's method
     for t in range(1, n):
         new_level = alpha * data[t] + (1 - alpha) * (level[t-1] + trend[t-1])
         new_trend = beta * (new_level - level[t-1]) + (1 - beta) * trend[t-1]
@@ -106,31 +90,30 @@ historical_data = df["Internet Users (Millions)"].values
 forecast_years = 3
 level, trend, forecast = holts_linear_trend(historical_data, alpha, beta, forecast_years)
 
-# Calculate forecast years
 last_year = df["Year"].iloc[-1]
 forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 
 # -------------------------------
-# MAIN CONTENT: MATHEMATICAL FRAMEWORK
+# MATHEMATICAL FRAMEWORK
 # -------------------------------
 with st.expander("📐 Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
-    st.markdown("""
-    ### Level Equation
-    \( L_t = \\alpha A_t + (1 - \\alpha)(L_{t-1} + T_{t-1}) \)
-    
-    ### Trend Equation
-    \( T_t = \\beta (L_t - L_{t-1}) + (1 - \\beta)T_{t-1} \)
-    
-    ### Forecast Equation
-    \( F_{t+m} = L_t + mT_t \)
-    
+    st.markdown(r"""
+    **Level Equation**
+    $L_t = \alpha A_t + (1 - \alpha)(L_{t-1} + T_{t-1})$
+
+    **Trend Equation**
+    $T_t = \beta (L_t - L_{t-1}) + (1 - \beta)T_{t-1}$
+
+    **Forecast Equation**
+    $F_{t+m} = L_t + mT_t$
+
     **Where:**
-    - \( L_t \) = Estimated internet user level at time \( t \)
-    - \( T_t \) = Estimated trend at time \( t \)
-    - \( A_t \) = Actual internet users at time \( t \)
-    - \( \\alpha \) = Level smoothing constant (current value: **{:.2f}**)
-    - \( \\beta \) = Trend smoothing constant (current value: **{:.2f}**)
-    - \( m \) = Number of years ahead being forecasted
+    - $L_t$ = Estimated internet user level at time $t$
+    - $T_t$ = Estimated trend at time $t$
+    - $A_t$ = Actual internet users at time $t$
+    - $\alpha$ = Level smoothing constant (current value: **{:.2f}**)
+    - $\beta$ = Trend smoothing constant (current value: **{:.2f}**)
+    - $m$ = Number of years ahead being forecasted
     """.format(alpha, beta))
 
 # -------------------------------
@@ -145,24 +128,21 @@ with col1:
     st.metric(
         label=f"📅 {forecast_years_list[0]}",
         value=f"{forecast[0]:,.2f} Million",
-        delta=f"{forecast[0] - historical_data[-1]:.2f} Million",
-        help="Projected internet users for this year"
+        delta=f"{forecast[0] - historical_data[-1]:.2f} Million"
     )
 
 with col2:
     st.metric(
         label=f"📅 {forecast_years_list[1]}",
         value=f"{forecast[1]:,.2f} Million",
-        delta=f"{forecast[1] - forecast[0]:.2f} Million",
-        help="Projected internet users for this year"
+        delta=f"{forecast[1] - forecast[0]:.2f} Million"
     )
 
 with col3:
     st.metric(
         label=f"📅 {forecast_years_list[2]}",
         value=f"{forecast[2]:,.2f} Million",
-        delta=f"{forecast[2] - forecast[1]:.2f} Million",
-        help="Projected internet users for this year"
+        delta=f"{forecast[2] - forecast[1]:.2f} Million"
     )
 
 # -------------------------------
@@ -186,17 +166,13 @@ ax.plot(years_historical, users_historical, 'o-',
 years_forecast = forecast_years_list
 users_forecast = forecast
 ax.plot(years_forecast, users_forecast, 'o-', 
-        label='Holt\'s Forecast', 
+        label="Holt's Forecast", 
         color='red', 
         linewidth=2, 
         markersize=8,
         linestyle='--')
 
-# Connect historical and forecast
-all_years = list(years_historical) + years_forecast
-all_users = list(users_historical) + users_forecast
-
-# Add vertical line at forecast start
+# Vertical line at forecast start
 ax.axvline(x=last_year, color='gray', linestyle=':', alpha=0.7, label='Forecast Start')
 
 # Labels and title
