@@ -93,24 +93,22 @@ forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 # MATHEMATICAL FRAMEWORK
 # -------------------------------
 with st.expander("📐 Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
-    st.markdown(f"""
-    **Level Equation**  
-    L_t = α × A_t + (1 - α) × (L_{t-1} + T_{t-1})
-
-    **Trend Equation**  
-    T_t = β × (L_t - L_{t-1}) + (1 - β) × T_{t-1}
-
-    **Forecast Equation**  
-    F_{t+m} = L_t + m × T_t
-
-    **Where:**
-    - L_t = Estimated internet user level at time t
-    - T_t = Estimated trend at time t
-    - A_t = Actual internet users at time t
-    - α = Level smoothing constant (current value: **{alpha:.2f}**)
-    - β = Trend smoothing constant (current value: **{beta:.2f}**)
-    - m = Number of years ahead being forecasted
-    """)
+    st.markdown("**Level Equation**")
+    st.markdown("L_t = a * A_t + (1 - a) * (L_{t-1} + T_{t-1})")
+    st.markdown("")
+    st.markdown("**Trend Equation**")
+    st.markdown("T_t = b * (L_t - L_{t-1}) + (1 - b) * T_{t-1}")
+    st.markdown("")
+    st.markdown("**Forecast Equation**")
+    st.markdown("F_{t+m} = L_t + m * T_t")
+    st.markdown("")
+    st.markdown("**Where:**")
+    st.markdown("- L_t = Estimated internet user level at time t")
+    st.markdown("- T_t = Estimated trend at time t")
+    st.markdown("- A_t = Actual internet users at time t")
+    st.markdown(f"- a = Level smoothing constant (current value: **{alpha:.2f}**)")
+    st.markdown(f"- b = Trend smoothing constant (current value: **{beta:.2f}**)")
+    st.markdown("- m = Number of years ahead being forecasted")
 
 # -------------------------------
 # METRICS DISPLAY
@@ -204,6 +202,32 @@ with col3:
         value=f"{users[-1]:.1f} Million",
         delta=f"{users[-1] - users[0]:.1f} Million"
     )
+
+# -------------------------------
+# FORECAST COMPARISON TABLE
+# -------------------------------
+st.subheader("📊 Scenario Comparison")
+
+# Show different alpha/beta combinations
+scenarios = [
+    {"name": "Conservative", "alpha": 0.20, "beta": 0.20},
+    {"name": "Moderate", "alpha": 0.50, "beta": 0.50},
+    {"name": "Aggressive", "alpha": 0.80, "beta": 0.80},
+]
+
+scenario_data = []
+for s in scenarios:
+    _, _, fcast = holts_linear_trend(historical_data, s["alpha"], s["beta"], forecast_years)
+    row = {
+        "Scenario": s["name"],
+        f"{forecast_years_list[0]}": f"{fcast[0]:.2f}",
+        f"{forecast_years_list[1]}": f"{fcast[1]:.2f}",
+        f"{forecast_years_list[2]}": f"{fcast[2]:.2f}",
+    }
+    scenario_data.append(row)
+
+scenario_df = pd.DataFrame(scenario_data)
+st.dataframe(scenario_df, use_container_width=True)
 
 # -------------------------------
 # FOOTER
