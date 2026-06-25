@@ -15,14 +15,12 @@ st.markdown("---")
 # -------------------------------
 st.sidebar.header("Simulation Parameters")
 
-# Alpha and Beta sliders
 alpha = st.sidebar.slider(
     "Alpha (a) - Level Smoothing",
     min_value=0.0,
     max_value=1.0,
     value=0.20,
     step=0.01,
-    help="Controls how much weight is given to the most recent observation."
 )
 
 beta = st.sidebar.slider(
@@ -31,27 +29,14 @@ beta = st.sidebar.slider(
     max_value=1.0,
     value=0.20,
     step=0.01,
-    help="Controls how quickly the trend estimate responds to changes in the data."
 )
 
 # -------------------------------
 # DATA: INTERNET USERS (PHILIPPINES)
-# Actual data from DataReportal, World Bank, and DICT
 # -------------------------------
-# Historical data (2014-2024) in millions
 years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 users = [
-    34.70,   # 2014 - World Bank / ITU [citation:2]
-    36.90,   # 2015 - World Bank / ITU [citation:2]
-    39.20,   # 2016 - World Bank / ITU [citation:2]
-    41.60,   # 2017 - World Bank / ITU [citation:2]
-    44.10,   # 2018 - World Bank / ITU [citation:2]
-    43.03,   # 2019 - World Bank / ITU [citation:4]
-    53.76,   # 2020 - World Bank / ITU [citation:4]
-    66.91,   # 2021 - World Bank / ITU [citation:4]
-    75.21,   # 2022 - World Bank / ITU [citation:4]
-    83.77,   # 2023 - World Bank / ITU [citation:4]
-    86.98    # 2024 - DataReportal [citation:5][citation:6]
+    34.70, 36.90, 39.20, 41.60, 44.10, 43.03, 53.76, 66.91, 75.21, 83.77, 86.98
 ]
 
 df = pd.DataFrame({"Year": years, "Internet Users (Millions)": users})
@@ -61,19 +46,15 @@ df = pd.DataFrame({"Year": years, "Internet Users (Millions)": users})
 # -------------------------------
 def holts_linear_trend(data, alpha, beta, forecast_years):
     n = len(data)
-    
-    # Initialize level and trend
     level = [data[0]]
     trend = [(data[1] - data[0])]
     
-    # Apply Holt's method
     for t in range(1, n):
         new_level = alpha * data[t] + (1 - alpha) * (level[t-1] + trend[t-1])
         new_trend = beta * (new_level - level[t-1]) + (1 - beta) * trend[t-1]
         level.append(new_level)
         trend.append(new_trend)
     
-    # Generate forecast
     current_level = level[-1]
     current_trend = trend[-1]
     forecast = [current_level + (m + 1) * current_trend for m in range(forecast_years)]
@@ -91,25 +72,27 @@ last_year = df["Year"].iloc[-1]
 forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 
 # -------------------------------
-# MATHEMATICAL FRAMEWORK
+# MATHEMATICAL FRAMEWORK - FIXED!
 # -------------------------------
 with st.expander("Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
-    st.markdown("**Level Equation**")
-    st.markdown("L_t = a * A_t + (1 - a) * (L_{t-1} + T_{t-1})")
-    st.markdown("")
-    st.markdown("**Trend Equation**")
-    st.markdown("T_t = b * (L_t - L_{t-1}) + (1 - b) * T_{t-1}")
-    st.markdown("")
-    st.markdown("**Forecast Equation**")
-    st.markdown("F_{t+m} = L_t + m * T_t")
-    st.markdown("")
-    st.markdown("**Where:**")
-    st.markdown("- L_t = Estimated internet user level at time t")
-    st.markdown("- T_t = Estimated trend at time t")
-    st.markdown("- A_t = Actual internet users at time t")
-    st.markdown(f"- a = Level smoothing constant (current value: **{alpha:.2f}**)")
-    st.markdown(f"- b = Trend smoothing constant (current value: **{beta:.2f}**)")
-    st.markdown("- m = Number of years ahead being forecasted")
+    st.markdown("""
+    **Level Equation**
+    L_t = a * A_t + (1 - a) * (L_{t-1} + T_{t-1})
+
+    **Trend Equation**
+    T_t = b * (L_t - L_{t-1}) + (1 - b) * T_{t-1}
+
+    **Forecast Equation**
+    F_{t+m} = L_t + m * T_t
+
+    **Where:**
+    - L_t = Estimated internet user level at time t
+    - T_t = Estimated trend at time t
+    - A_t = Actual internet users at time t
+    - a = Level smoothing constant (current value: **{:.2f}**)
+    - b = Trend smoothing constant (current value: **{:.2f}**)
+    - m = Number of years ahead being forecasted
+    """.format(alpha, beta))
 
 # -------------------------------
 # METRICS DISPLAY
@@ -145,8 +128,6 @@ with col3:
 # -------------------------------
 st.markdown("---")
 st.subheader("Historical Internet User Data")
-
-# Display historical data as a table
 st.dataframe(df, use_container_width=True)
 
 # -------------------------------
@@ -167,19 +148,12 @@ st.dataframe(forecast_df, use_container_width=True)
 # -------------------------------
 st.subheader("Growth Analysis")
 
-# Calculate growth rates
 historical_growth = []
 for i in range(1, len(users)):
     growth = ((users[i] - users[i-1]) / users[i-1]) * 100
     historical_growth.append(growth)
 
 avg_growth = sum(historical_growth) / len(historical_growth)
-
-# Calculate forecast growth
-forecast_growth = []
-for i in range(1, len(forecast)):
-    growth = ((forecast[i] - forecast[i-1]) / forecast[i-1]) * 100
-    forecast_growth.append(growth)
 
 col1, col2, col3 = st.columns(3)
 
@@ -205,11 +179,10 @@ with col3:
     )
 
 # -------------------------------
-# FORECAST COMPARISON TABLE
+# SCENARIO COMPARISON
 # -------------------------------
 st.subheader("Scenario Comparison")
 
-# Show different alpha/beta combinations
 scenarios = [
     {"name": "Conservative", "alpha": 0.20, "beta": 0.20},
     {"name": "Moderate", "alpha": 0.50, "beta": 0.50},
@@ -231,9 +204,9 @@ scenario_df = pd.DataFrame(scenario_data)
 st.dataframe(scenario_df, use_container_width=True)
 
 # -------------------------------
-# DATA SOURCE NOTES
+# FOOTER
 # -------------------------------
 st.markdown("---")
 st.caption("Figure 1. Internet User Growth Forecasting Simulation System")
-st.caption("Data sources: DataReportal [citation:5], World Bank [citation:2], DICT [citation:10]")
-st.caption("Note: Values are in millions. 2024 data from DataReportal (86.98 million). 2014-2023 data from World Bank/ITU [citation:2][citation:4].")
+st.caption("Data sources: DataReportal, World Bank, DICT")
+st.caption("Note: Values are in millions. 2024 data from DataReportal (86.98 million). 2014-2023 data from World Bank/ITU.")
