@@ -1,151 +1,238 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+# -------------------------------
+# PAGE CONFIGURATION
+# -------------------------------
+st.set_page_config(page_title="Internet User Growth Forecast", layout="wide")
+
+st.title("🌐 Internet User Growth Forecasting Simulation")
+st.markdown("---")
+
+# -------------------------------
+# SIDEBAR: SIMULATION PARAMETERS
+# -------------------------------
+st.sidebar.header("📊 Simulation Parameters")
+
+# Alpha and Beta sliders
+alpha = st.sidebar.slider(
+    "Alpha (α) - Level Smoothing",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.20,
+    step=0.01,
+    help="Controls how much weight is given to the most recent observation. Lower values give more weight to historical data."
 )
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+beta = st.sidebar.slider(
+    "Beta (β) - Trend Smoothing",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.20,
+    step=0.01,
+    help="Controls how quickly the trend estimate responds to changes in the data."
+)
 
+# -------------------------------
+# SAMPLE DATA: INTERNET USERS (PHILIPPINES)
+# Replace this with your actual data
+# -------------------------------
 @st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+def load_data():
+    # Sample historical data (2014-2024)
+    # Replace these values with your actual data from DataReportal / World Bank
+    years = list(range(2014, 2025))
+    users = [
+        38.0,   # 2014
+        42.0,   # 2015
+        47.0,   # 2016
+        52.0,   # 2017
+        58.0,   # 2018
+        65.0,   # 2019
+        73.0,   # 2020
+        80.0,   # 2021
+        85.0,   # 2022
+        89.0,   # 2023
+        92.0    # 2024
+    ]
+    return pd.DataFrame({"Year": years, "Internet Users (Millions)": users})
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
+df = load_data()
+
+# -------------------------------
+# HOLT'S LINEAR TREND METHOD
+# -------------------------------
+def holts_linear_trend(data, alpha, beta, forecast_years):
     """
+    Applies Holt's Linear Trend Method to forecast future values.
+    
+    Parameters:
+    - data: List or array of historical values
+    - alpha: Level smoothing constant (0-1)
+    - beta: Trend smoothing constant (0-1)
+    - forecast_years: Number of years to forecast ahead
+    
+    Returns:
+    - level: Current level estimate
+    - trend: Current trend estimate
+    - forecast: Forecasted values for future years
+    """
+    n = len(data)
+    
+    # Initialize level and trend
+    level = [data[0]]  # Starting level = first observation
+    trend = [(data[1] - data[0])]  # Starting trend = initial slope
+    
+    # Apply Holt's method to historical data
+    for t in range(1, n):
+        new_level = alpha * data[t] + (1 - alpha) * (level[t-1] + trend[t-1])
+        new_trend = beta * (new_level - level[t-1]) + (1 - beta) * trend[t-1]
+        level.append(new_level)
+        trend.append(new_trend)
+    
+    # Generate forecast
+    current_level = level[-1]
+    current_trend = trend[-1]
+    forecast = [current_level + (m + 1) * current_trend for m in range(forecast_years)]
+    
+    return level, trend, forecast
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+# -------------------------------
+# APPLY HOLT'S METHOD
+# -------------------------------
+historical_data = df["Internet Users (Millions)"].values
+forecast_years = 3
+level, trend, forecast = holts_linear_trend(historical_data, alpha, beta, forecast_years)
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+# Calculate forecast years
+last_year = df["Year"].iloc[-1]
+forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
+# -------------------------------
+# MAIN CONTENT: MATHEMATICAL FRAMEWORK
+# -------------------------------
+with st.expander("📐 Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
+    st.markdown("""
+    ### Level Equation
+    \( L_t = \\alpha A_t + (1 - \\alpha)(L_{t-1} + T_{t-1}) \)
+    
+    ### Trend Equation
+    \( T_t = \\beta (L_t - L_{t-1}) + (1 - \\beta)T_{t-1} \)
+    
+    ### Forecast Equation
+    \( F_{t+m} = L_t + mT_t \)
+    
+    **Where:**
+    - \( L_t \) = Estimated internet user level at time \( t \)
+    - \( T_t \) = Estimated trend at time \( t \)
+    - \( A_t \) = Actual internet users at time \( t \)
+    - \( \\alpha \) = Level smoothing constant (current value: **{:.2f}**)
+    - \( \\beta \) = Trend smoothing constant (current value: **{:.2f}**)
+    - \( m \) = Number of years ahead being forecasted
+    """.format(alpha, beta))
+
+# -------------------------------
+# METRICS DISPLAY
+# -------------------------------
+st.markdown("---")
+st.subheader("📈 Internet Growth Dashboard Metrics")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        label=f"📅 {forecast_years_list[0]}",
+        value=f"{forecast[0]:,.2f} Million",
+        delta=f"{forecast[0] - historical_data[-1]:.2f} Million",
+        help="Projected internet users for this year"
     )
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+with col2:
+    st.metric(
+        label=f"📅 {forecast_years_list[1]}",
+        value=f"{forecast[1]:,.2f} Million",
+        delta=f"{forecast[1] - forecast[0]:.2f} Million",
+        help="Projected internet users for this year"
+    )
 
-    return gdp_df
+with col3:
+    st.metric(
+        label=f"📅 {forecast_years_list[2]}",
+        value=f"{forecast[2]:,.2f} Million",
+        delta=f"{forecast[2] - forecast[1]:.2f} Million",
+        help="Projected internet users for this year"
+    )
 
-gdp_df = get_gdp_data()
+# -------------------------------
+# GRAPH: HISTORICAL TRENDS VS PROJECTIONS
+# -------------------------------
+st.markdown("---")
+st.subheader("📊 Historical Trends vs 3-Year Projections")
 
-# -----------------------------------------------------------------------------
-# Draw the actual page
+fig, ax = plt.subplots(figsize=(12, 6))
 
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
+# Historical data
+years_historical = df["Year"].values
+users_historical = df["Internet Users (Millions)"].values
+ax.plot(years_historical, users_historical, 'o-', 
+        label='Actual Historical Data', 
+        color='blue', 
+        linewidth=2, 
+        markersize=8)
 
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
+# Forecast data
+years_forecast = forecast_years_list
+users_forecast = forecast
+ax.plot(years_forecast, users_forecast, 'o-', 
+        label='Holt\'s Forecast', 
+        color='red', 
+        linewidth=2, 
+        markersize=8,
+        linestyle='--')
 
-# Add some spacing
-''
-''
+# Connect historical and forecast
+all_years = list(years_historical) + years_forecast
+all_users = list(users_historical) + users_forecast
 
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
+# Add vertical line at forecast start
+ax.axvline(x=last_year, color='gray', linestyle=':', alpha=0.7, label='Forecast Start')
 
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
+# Labels and title
+ax.set_xlabel('Year', fontsize=12)
+ax.set_ylabel('Internet Users (Millions)', fontsize=12)
+ax.set_title('Internet User Growth: Historical Trends vs 3-Year Projections', fontsize=14, fontweight='bold')
+ax.legend(loc='upper left', fontsize=10)
+ax.grid(True, alpha=0.3)
 
-countries = gdp_df['Country Code'].unique()
+# Format y-axis with commas
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
 
-if not len(countries):
-    st.warning("Select at least one country")
+st.pyplot(fig)
 
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
+# -------------------------------
+# DATA ANALYSIS BREAKDOWN TABLE
+# -------------------------------
+st.markdown("---")
+st.subheader("📋 Data Analysis Breakdown")
 
-''
-''
-''
+# Create forecast table
+forecast_data = {
+    "Year": forecast_years_list,
+    "Forecasted Internet Users (Millions)": [f"{f:.2f}" for f in forecast]
+}
 
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
+forecast_df = pd.DataFrame(forecast_data)
+st.dataframe(forecast_df, use_container_width=True)
 
-st.header('GDP over time', divider='gray')
+# Display full historical data
+with st.expander("📜 View Full Historical Data"):
+    st.dataframe(df, use_container_width=True)
 
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+# -------------------------------
+# FOOTER
+# -------------------------------
+st.markdown("---")
+st.caption("Figure 1. Internet User Growth Forecasting Simulation System")
+st.caption("Data sources: DataReportal, World Bank, DICT")
