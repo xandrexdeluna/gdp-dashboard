@@ -75,24 +75,22 @@ forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 # MATHEMATICAL FRAMEWORK - FIXED!
 # -------------------------------
 with st.expander("Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
-    st.markdown("""
-    **Level Equation**
-    L_t = a * A_t + (1 - a) * (L_{t-1} + T_{t-1})
-
-    **Trend Equation**
-    T_t = b * (L_t - L_{t-1}) + (1 - b) * T_{t-1}
-
-    **Forecast Equation**
-    F_{t+m} = L_t + m * T_t
-
-    **Where:**
-    - L_t = Estimated internet user level at time t
-    - T_t = Estimated trend at time t
-    - A_t = Actual internet users at time t
-    - a = Level smoothing constant (current value: **{:.2f}**)
-    - b = Trend smoothing constant (current value: **{:.2f}**)
-    - m = Number of years ahead being forecasted
-    """.format(alpha, beta))
+    st.markdown("**Level Equation**")
+    st.markdown("L_t = a * A_t + (1 - a) * (L_(t-1) + T_(t-1))")
+    st.markdown("")
+    st.markdown("**Trend Equation**")
+    st.markdown("T_t = b * (L_t - L_(t-1)) + (1 - b) * T_(t-1)")
+    st.markdown("")
+    st.markdown("**Forecast Equation**")
+    st.markdown("F_(t+m) = L_t + m * T_t")
+    st.markdown("")
+    st.markdown("**Where:**")
+    st.markdown("- L_t = Estimated internet user level at time t")
+    st.markdown("- T_t = Estimated trend at time t")
+    st.markdown("- A_t = Actual internet users at time t")
+    st.markdown("- a = Level smoothing constant (current value: **" + str(alpha) + "**)")
+    st.markdown("- b = Trend smoothing constant (current value: **" + str(beta) + "**)")
+    st.markdown("- m = Number of years ahead being forecasted")
 
 # -------------------------------
 # METRICS DISPLAY
@@ -104,21 +102,21 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        label=f"{forecast_years_list[0]}",
+        label=str(forecast_years_list[0]),
         value=f"{forecast[0]:,.2f} Million",
         delta=f"{forecast[0] - historical_data[-1]:.2f} Million"
     )
 
 with col2:
     st.metric(
-        label=f"{forecast_years_list[1]}",
+        label=str(forecast_years_list[1]),
         value=f"{forecast[1]:,.2f} Million",
         delta=f"{forecast[1] - forecast[0]:.2f} Million"
     )
 
 with col3:
     st.metric(
-        label=f"{forecast_years_list[2]}",
+        label=str(forecast_years_list[2]),
         value=f"{forecast[2]:,.2f} Million",
         delta=f"{forecast[2] - forecast[1]:.2f} Million"
     )
@@ -194,9 +192,9 @@ for s in scenarios:
     _, _, fcast = holts_linear_trend(historical_data, s["alpha"], s["beta"], forecast_years)
     row = {
         "Scenario": s["name"],
-        f"{forecast_years_list[0]}": f"{fcast[0]:.2f}",
-        f"{forecast_years_list[1]}": f"{fcast[1]:.2f}",
-        f"{forecast_years_list[2]}": f"{fcast[2]:.2f}",
+        str(forecast_years_list[0]): f"{fcast[0]:.2f}",
+        str(forecast_years_list[1]): f"{fcast[1]:.2f}",
+        str(forecast_years_list[2]): f"{fcast[2]:.2f}",
     }
     scenario_data.append(row)
 
