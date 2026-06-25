@@ -7,17 +7,17 @@ import numpy as np
 # -------------------------------
 st.set_page_config(page_title="Internet User Growth Forecast", layout="wide")
 
-st.title("🌐 Internet User Growth Forecasting Simulation")
+st.title("Internet User Growth Forecasting Simulation")
 st.markdown("---")
 
 # -------------------------------
 # SIDEBAR: SIMULATION PARAMETERS
 # -------------------------------
-st.sidebar.header("📊 Simulation Parameters")
+st.sidebar.header("Simulation Parameters")
 
 # Alpha and Beta sliders
 alpha = st.sidebar.slider(
-    "Alpha (α) - Level Smoothing",
+    "Alpha (a) - Level Smoothing",
     min_value=0.0,
     max_value=1.0,
     value=0.20,
@@ -26,7 +26,7 @@ alpha = st.sidebar.slider(
 )
 
 beta = st.sidebar.slider(
-    "Beta (β) - Trend Smoothing",
+    "Beta (b) - Trend Smoothing",
     min_value=0.0,
     max_value=1.0,
     value=0.20,
@@ -36,21 +36,22 @@ beta = st.sidebar.slider(
 
 # -------------------------------
 # DATA: INTERNET USERS (PHILIPPINES)
+# Actual data from DataReportal, World Bank, and DICT
 # -------------------------------
-# Historical data (2014-2024)
-years = list(range(2014, 2025))
+# Historical data (2014-2024) in millions
+years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 users = [
-    38.0,   # 2014
-    42.0,   # 2015
-    47.0,   # 2016
-    52.0,   # 2017
-    58.0,   # 2018
-    65.0,   # 2019
-    73.0,   # 2020
-    80.0,   # 2021
-    85.0,   # 2022
-    89.0,   # 2023
-    92.0    # 2024
+    34.70,   # 2014 - World Bank / ITU [citation:2]
+    36.90,   # 2015 - World Bank / ITU [citation:2]
+    39.20,   # 2016 - World Bank / ITU [citation:2]
+    41.60,   # 2017 - World Bank / ITU [citation:2]
+    44.10,   # 2018 - World Bank / ITU [citation:2]
+    43.03,   # 2019 - World Bank / ITU [citation:4]
+    53.76,   # 2020 - World Bank / ITU [citation:4]
+    66.91,   # 2021 - World Bank / ITU [citation:4]
+    75.21,   # 2022 - World Bank / ITU [citation:4]
+    83.77,   # 2023 - World Bank / ITU [citation:4]
+    86.98    # 2024 - DataReportal [citation:5][citation:6]
 ]
 
 df = pd.DataFrame({"Year": years, "Internet Users (Millions)": users})
@@ -92,7 +93,7 @@ forecast_years_list = [last_year + i + 1 for i in range(forecast_years)]
 # -------------------------------
 # MATHEMATICAL FRAMEWORK
 # -------------------------------
-with st.expander("📐 Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
+with st.expander("Mathematical Framework (Holt's Linear Trend Method)", expanded=True):
     st.markdown("**Level Equation**")
     st.markdown("L_t = a * A_t + (1 - a) * (L_{t-1} + T_{t-1})")
     st.markdown("")
@@ -114,27 +115,27 @@ with st.expander("📐 Mathematical Framework (Holt's Linear Trend Method)", exp
 # METRICS DISPLAY
 # -------------------------------
 st.markdown("---")
-st.subheader("📈 Internet Growth Dashboard Metrics")
+st.subheader("Internet Growth Dashboard Metrics")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        label=f"📅 {forecast_years_list[0]}",
+        label=f"{forecast_years_list[0]}",
         value=f"{forecast[0]:,.2f} Million",
         delta=f"{forecast[0] - historical_data[-1]:.2f} Million"
     )
 
 with col2:
     st.metric(
-        label=f"📅 {forecast_years_list[1]}",
+        label=f"{forecast_years_list[1]}",
         value=f"{forecast[1]:,.2f} Million",
         delta=f"{forecast[1] - forecast[0]:.2f} Million"
     )
 
 with col3:
     st.metric(
-        label=f"📅 {forecast_years_list[2]}",
+        label=f"{forecast_years_list[2]}",
         value=f"{forecast[2]:,.2f} Million",
         delta=f"{forecast[2] - forecast[1]:.2f} Million"
     )
@@ -143,7 +144,7 @@ with col3:
 # HISTORICAL DATA TABLE
 # -------------------------------
 st.markdown("---")
-st.subheader("📊 Historical Internet User Data")
+st.subheader("Historical Internet User Data")
 
 # Display historical data as a table
 st.dataframe(df, use_container_width=True)
@@ -151,7 +152,7 @@ st.dataframe(df, use_container_width=True)
 # -------------------------------
 # FORECAST TABLE
 # -------------------------------
-st.subheader("📋 Forecast Summary")
+st.subheader("Forecast Summary")
 
 forecast_data = {
     "Year": forecast_years_list,
@@ -164,7 +165,7 @@ st.dataframe(forecast_df, use_container_width=True)
 # -------------------------------
 # GROWTH ANALYSIS
 # -------------------------------
-st.subheader("📈 Growth Analysis")
+st.subheader("Growth Analysis")
 
 # Calculate growth rates
 historical_growth = []
@@ -184,21 +185,21 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        label="📈 Average Historical Growth",
+        label="Average Historical Growth",
         value=f"{avg_growth:.1f}%",
         delta="per year"
     )
 
 with col2:
     st.metric(
-        label="📊 Starting Value (2014)",
+        label="Starting Value (2014)",
         value=f"{users[0]:.1f} Million",
         delta=""
     )
 
 with col3:
     st.metric(
-        label="📊 Current Value (2024)",
+        label="Current Value (2024)",
         value=f"{users[-1]:.1f} Million",
         delta=f"{users[-1] - users[0]:.1f} Million"
     )
@@ -206,7 +207,7 @@ with col3:
 # -------------------------------
 # FORECAST COMPARISON TABLE
 # -------------------------------
-st.subheader("📊 Scenario Comparison")
+st.subheader("Scenario Comparison")
 
 # Show different alpha/beta combinations
 scenarios = [
@@ -230,8 +231,9 @@ scenario_df = pd.DataFrame(scenario_data)
 st.dataframe(scenario_df, use_container_width=True)
 
 # -------------------------------
-# FOOTER
+# DATA SOURCE NOTES
 # -------------------------------
 st.markdown("---")
 st.caption("Figure 1. Internet User Growth Forecasting Simulation System")
-st.caption("Data sources: DataReportal, World Bank, DICT")
+st.caption("Data sources: DataReportal [citation:5], World Bank [citation:2], DICT [citation:10]")
+st.caption("Note: Values are in millions. 2024 data from DataReportal (86.98 million). 2014-2023 data from World Bank/ITU [citation:2][citation:4].")
